@@ -10,7 +10,7 @@ app.get('/', (req, res) => {
   res.json({
     instance: INSTANCE,
     hostname: HOSTNAME,
-    message: 'intento 3 prueba rama test 2, ahora desde github',
+    message: 'intento 4 prueba rama test 2, ahora desde github',
     timestamp: new Date().toISOString()
   });
 });
