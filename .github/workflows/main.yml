@@ -1,0 +1,50 @@
+name: Dev Deploy
+on:
+  push:
+    branches:
+      - '**'
+jobs:
+  check-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check commit [deploy]
+        id: check
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "Mensaje: $COMMIT_MSG"
+
+          if echo "$COMMIT_MSG" | grep -q '\[deploy\]'; then
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "[deploy] Detectado e iniciado"
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "No [deploy], skip"
+          fi
+
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+
+  deploy:
+    needs: check-and-deploy
+    if: needs.check-and-deploy.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: nombre de rama
+        id: branch
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Rama: $BRANCH"
+
+      - name: Deploy en VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /opt/deploy
+            ./deploy.sh ${{ steps.branch.outputs.branch }}
